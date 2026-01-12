@@ -55,7 +55,7 @@ pub fn switch_mode(options: SwitchOptions) -> Result<String> {
         _ => {}
     }
 
-    let output = Command::new("sudo")
+    let output = Command::new("pkexec")
         .arg("envycontrol")
         .args(&args)
         .output()?;
@@ -72,7 +72,7 @@ pub fn switch_mode(options: SwitchOptions) -> Result<String> {
 }
 
 pub fn reset() -> Result<String> {
-    let output = Command::new("sudo")
+    let output = Command::new("pkexec")
         .arg("envycontrol")
         .arg("--reset")
         .output()?;
