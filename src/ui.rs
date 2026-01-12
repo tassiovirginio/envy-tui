@@ -293,7 +293,9 @@ fn render_message(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
     let (title, border_color, icon) = match app.state {
         AppState::Success => (" Success ", theme.success, " "),
         AppState::Error => (" Error ", theme.error, " "),
-        AppState::Confirming => (" Confirm ", theme.warning, "󰋼 "),
+        AppState::ConfirmingSwitch | AppState::ConfirmingReboot => {
+            (" Confirm ", theme.warning, "󰋼 ")
+        }
         AppState::Normal => return,
     };
 
@@ -319,7 +321,12 @@ fn render_message(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
         ]),
         Line::from(""),
         Line::from(Span::styled(
-            "Press any key to continue",
+            match app.state {
+                AppState::ConfirmingSwitch | AppState::ConfirmingReboot => {
+                    "y/Enter: Sim  |  n/Esc: Não"
+                }
+                _ => "Pressione qualquer tecla para continuar",
+            },
             Style::default().fg(theme.muted),
         )),
     ];

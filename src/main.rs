@@ -56,6 +56,56 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                 continue;
             }
 
+            if app.state == AppState::ConfirmingSwitch {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('s') | KeyCode::Enter => {
+                        let selected = app.pending_mode.unwrap_or(app.selected_mode());
+                        let options = envycontrol::SwitchOptions {
+                            mode: selected,
+                            rtd3_enabled: app.rtd3_enabled,
+                            rtd3_level: app.rtd3_level,
+                            force_comp: app.force_comp,
+                            coolbits_enabled: app.coolbits_enabled,
+                            coolbits_value: app.coolbits_value,
+                        };
+
+                        match envycontrol::switch_mode(options) {
+                            Ok(_) => {
+                                app.current_mode = Some(selected);
+                                app.pending_mode = None;
+                                app.state = AppState::ConfirmingReboot;
+                                app.message = "Modo alterado com sucesso! Deseja reiniciar o computador agora?".to_string();
+                            }
+                            Err(e) => {
+                                app.pending_mode = None;
+                                app.set_error(&e.to_string());
+                            }
+                        }
+                    }
+                    KeyCode::Char('n') | KeyCode::Esc => {
+                        app.pending_mode = None;
+                        app.clear_message();
+                    }
+                    _ => {}
+                }
+                continue;
+            }
+
+            if app.state == AppState::ConfirmingReboot {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('s') | KeyCode::Enter => {
+                        if let Err(e) = envycontrol::reboot() {
+                            app.set_error(&format!("Falha ao reiniciar: {}", e));
+                        }
+                    }
+                    KeyCode::Char('n') | KeyCode::Esc => {
+                        app.set_success("Alterações aplicadas. Reinicie o computador para que as mudanças tenham efeito.");
+                    }
+                    _ => {}
+                }
+                continue;
+            }
+
             if app.state != AppState::Normal {
                 app.clear_message();
                 continue;
@@ -86,22 +136,9 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                 }
                 KeyCode::Enter => {
                     let selected = app.selected_mode();
-                    let options = envycontrol::SwitchOptions {
-                        mode: selected,
-                        rtd3_enabled: app.rtd3_enabled,
-                        rtd3_level: app.rtd3_level,
-                        force_comp: app.force_comp,
-                        coolbits_enabled: app.coolbits_enabled,
-                        coolbits_value: app.coolbits_value,
-                    };
-
-                    match envycontrol::switch_mode(options) {
-                        Ok(msg) => {
-                            app.current_mode = Some(selected);
-                            app.set_success(&msg);
-                        }
-                        Err(e) => app.set_error(&e.to_string()),
-                    }
+                    app.pending_mode = Some(selected);
+                    app.state = AppState::ConfirmingSwitch;
+                    app.message = format!("Deseja mudar para o modo {}? (y/n)", selected);
                 }
                 KeyCode::Char('r') => match envycontrol::reset() {
                     Ok(msg) => {

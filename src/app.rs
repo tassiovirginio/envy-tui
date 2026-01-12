@@ -20,9 +20,15 @@ impl fmt::Display for GraphicsMode {
 impl GraphicsMode {
     pub fn description(&self) -> &str {
         match self {
-            GraphicsMode::Integrated => "Use Intel/AMD iGPU exclusively. Nvidia GPU is turned off for power saving.",
-            GraphicsMode::Hybrid => "Enable PRIME render offloading. GPU can be dynamically turned off when not in use.",
-            GraphicsMode::Nvidia => "Use Nvidia dGPU exclusively. Higher performance, higher power consumption.",
+            GraphicsMode::Integrated => {
+                "Use Intel/AMD iGPU exclusively. Nvidia GPU is turned off for power saving."
+            }
+            GraphicsMode::Hybrid => {
+                "Enable PRIME render offloading. GPU can be dynamically turned off when not in use."
+            }
+            GraphicsMode::Nvidia => {
+                "Use Nvidia dGPU exclusively. Higher performance, higher power consumption."
+            }
         }
     }
 
@@ -35,7 +41,11 @@ impl GraphicsMode {
     }
 
     pub fn all() -> Vec<GraphicsMode> {
-        vec![GraphicsMode::Integrated, GraphicsMode::Hybrid, GraphicsMode::Nvidia]
+        vec![
+            GraphicsMode::Integrated,
+            GraphicsMode::Hybrid,
+            GraphicsMode::Nvidia,
+        ]
     }
 }
 
@@ -87,7 +97,8 @@ pub enum AppPanel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppState {
     Normal,
-    Confirming,
+    ConfirmingSwitch,
+    ConfirmingReboot,
     Success,
     Error,
 }
@@ -105,6 +116,7 @@ pub struct App {
     pub coolbits_enabled: bool,
     pub coolbits_value: u8,
     pub should_quit: bool,
+    pub pending_mode: Option<GraphicsMode>,
 }
 
 impl App {
@@ -122,6 +134,7 @@ impl App {
             coolbits_enabled: false,
             coolbits_value: 28,
             should_quit: false,
+            pending_mode: None,
         }
     }
 
@@ -167,7 +180,10 @@ impl App {
             0 => self.rtd3_enabled = !self.rtd3_enabled,
             1 => {
                 let levels = Rtd3Level::all();
-                let current_idx = levels.iter().position(|&l| l == self.rtd3_level).unwrap_or(0);
+                let current_idx = levels
+                    .iter()
+                    .position(|&l| l == self.rtd3_level)
+                    .unwrap_or(0);
                 self.rtd3_level = levels[(current_idx + 1) % levels.len()];
             }
             2 => self.force_comp = !self.force_comp,

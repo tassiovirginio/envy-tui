@@ -92,3 +92,8 @@ pub fn is_envycontrol_installed() -> bool {
         .map(|o| o.status.success())
         .unwrap_or(false)
 }
+
+pub fn reboot() -> Result<()> {
+    Command::new("systemctl").arg("reboot").spawn()?;
+    Ok(())
+}
