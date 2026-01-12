@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Padding, Paragraph},
+    widgets::{Block, Borders, Clear, Padding, Paragraph, Wrap},
     Frame,
 };
 
@@ -153,7 +153,9 @@ fn render_mode_selection(frame: &mut Frame, app: &App, theme: &Theme, area: Rect
             )),
         ];
 
-        let paragraph = Paragraph::new(lines).style(Style::default().bg(bg));
+        let paragraph = Paragraph::new(lines)
+            .style(Style::default().bg(bg))
+            .wrap(Wrap { trim: false });
 
         frame.render_widget(paragraph, mode_area);
     }
@@ -183,37 +185,56 @@ fn render_options(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
 
     let selected_mode = app.selected_mode();
 
-    let options: Vec<(String, bool, bool)> = match selected_mode {
+    // (label, description, is_on, is_toggle)
+    let options: Vec<(String, &str, bool, bool)> = match selected_mode {
         GraphicsMode::Hybrid => vec![
-            (format!("RTD3 Power Management"), app.rtd3_enabled, true),
+            (
+                "RTD3 Power Management".to_string(),
+                "Enables Runtime D3 (RTD3) power management for the dGPU. Allows GPU to enter low-power state when idle.",
+                app.rtd3_enabled,
+                true,
+            ),
             (
                 format!("RTD3 Level: {}", app.rtd3_level),
+                "Controls RTD3 aggressiveness. Higher levels save more power but may cause latency on GPU wake.",
                 false,
                 app.rtd3_enabled,
             ),
         ],
         GraphicsMode::Nvidia => vec![
-            (format!("Force Composition Pipeline"), app.force_comp, true),
+            (
+                "Force Composition Pipeline".to_string(),
+                "Forces full composition pipeline. Fixes screen tearing but may reduce performance slightly.",
+                app.force_comp,
+                true,
+            ),
             (
                 format!("Coolbits (value: {})", app.coolbits_value),
+                "Enables advanced GPU features like overclocking, fan control, and voltage adjustment.",
                 app.coolbits_enabled,
                 true,
             ),
         ],
         GraphicsMode::Integrated => {
-            vec![("No additional options available".to_string(), false, false)]
+            vec![(
+                "No additional options available".to_string(),
+                "Integrated mode uses only the iGPU. The dGPU is powered off to save battery.",
+                false,
+                false,
+            )]
         }
     };
 
-    for (i, (label, is_on, is_toggle)) in options.iter().enumerate() {
+    let option_height = 4;
+    for (i, (label, description, is_on, is_toggle)) in options.iter().enumerate() {
         let is_selected = i == app.selected_option_index && is_focused;
-        let y = inner.y + (i as u16 * 2);
+        let y = inner.y + (i as u16 * option_height);
 
-        if y >= inner.y + inner.height {
+        if y + option_height > inner.y + inner.height {
             break;
         }
 
-        let option_area = Rect::new(inner.x, y, inner.width, 2);
+        let option_area = Rect::new(inner.x, y, inner.width, option_height);
 
         let bg = if is_selected {
             theme.selection_bg
@@ -234,12 +255,23 @@ fn render_options(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
 
         let checkbox_color = if *is_on { theme.success } else { theme.muted };
 
-        let line = Line::from(vec![
-            Span::styled(checkbox, Style::default().fg(checkbox_color)),
-            Span::styled(label.as_str(), Style::default().fg(fg)),
-        ]);
+        let lines = vec![
+            Line::from(vec![
+                Span::styled(checkbox, Style::default().fg(checkbox_color)),
+                Span::styled(
+                    label.as_str(),
+                    Style::default().fg(fg).add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(Span::styled(
+                format!("    {}", description),
+                Style::default().fg(theme.muted),
+            )),
+        ];
 
-        let paragraph = Paragraph::new(line).style(Style::default().bg(bg));
+        let paragraph = Paragraph::new(lines)
+            .style(Style::default().bg(bg))
+            .wrap(Wrap { trim: false });
         frame.render_widget(paragraph, option_area);
     }
 }
@@ -323,9 +355,9 @@ fn render_message(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
         Line::from(Span::styled(
             match app.state {
                 AppState::ConfirmingSwitch | AppState::ConfirmingReboot => {
-                    "y/Enter: Sim  |  n/Esc: Não"
+                    "y/Enter: Yes  |  n/Esc: No"
                 }
-                _ => "Pressione qualquer tecla para continuar",
+                _ => "Press any key to continue",
             },
             Style::default().fg(theme.muted),
         )),

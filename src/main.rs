@@ -74,7 +74,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                                 app.current_mode = Some(selected);
                                 app.pending_mode = None;
                                 app.state = AppState::ConfirmingReboot;
-                                app.message = "Modo alterado com sucesso! Deseja reiniciar o computador agora?".to_string();
+                                app.message = "Mode changed successfully! Do you want to reboot the computer now?".to_string();
                             }
                             Err(e) => {
                                 app.pending_mode = None;
@@ -95,11 +95,13 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                 match key.code {
                     KeyCode::Char('y') | KeyCode::Char('s') | KeyCode::Enter => {
                         if let Err(e) = envycontrol::reboot() {
-                            app.set_error(&format!("Falha ao reiniciar: {}", e));
+                            app.set_error(&format!("Failed to reboot: {}", e));
                         }
                     }
                     KeyCode::Char('n') | KeyCode::Esc => {
-                        app.set_success("Alterações aplicadas. Reinicie o computador para que as mudanças tenham efeito.");
+                        app.set_success(
+                            "Changes applied. Reboot the computer for changes to take effect.",
+                        );
                     }
                     _ => {}
                 }
@@ -138,7 +140,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                     let selected = app.selected_mode();
                     app.pending_mode = Some(selected);
                     app.state = AppState::ConfirmingSwitch;
-                    app.message = format!("Deseja mudar para o modo {}? (y/n)", selected);
+                    app.message = format!("Switch to {} mode? (y/n)", selected);
                 }
                 KeyCode::Char('r') => match envycontrol::reset() {
                     Ok(msg) => {
