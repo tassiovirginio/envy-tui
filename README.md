@@ -24,6 +24,14 @@ A Terminal User Interface (TUI) manager for [EnvyControl](https://github.com/bay
 
 ## 🚀 Installation
 
+### Arch Linux (AUR)
+
+```bash
+yay -S envy-tui-bin
+```
+
+### From Source
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/envy-tui.git
