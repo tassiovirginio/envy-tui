@@ -9,20 +9,20 @@ A Terminal User Interface (TUI) manager for [EnvyControl](https://github.com/bay
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-## ✨ Features
+## Features
 
-- 🖥️ **Modern TUI** - Beautiful terminal interface built with Ratatui
-- 🔄 **Mode Switching** - Switch between Integrated, Hybrid, and Nvidia modes
-- ⚙️ **Advanced Options** - Configure RTD3, Coolbits, and ForceCompositionPipeline
-- 🎨 **Visual Feedback** - Color-coded modes and clear status indicators
-- ⌨️ **Keyboard Navigation** - Vim-style keybindings for efficient control
+- **Modern TUI** - Beautiful terminal interface built with Ratatui
+- **Mode Switching** - Switch between Integrated, Hybrid, and Nvidia modes
+- **Advanced Options** - Configure RTD3, Coolbits, and ForceCompositionPipeline
+- **Visual Feedback** - Color-coded modes and clear status indicators
+- **Keyboard Navigation** - Vim-style keybindings for efficient control
 
-## 📦 Prerequisites
+## Prerequisites
 
 - [EnvyControl](https://github.com/bayasdev/envycontrol) installed on your system
 - Rust toolchain (for building from source)
 
-## 🚀 Installation
+## Installation
 
 ### Arch Linux (AUR)
 
@@ -41,7 +41,7 @@ cd envy-tui
 cargo install --path .
 ```
 
-## ⚡ Usage
+## Usage
 
 ```bash
 # Run the TUI
@@ -59,7 +59,7 @@ envy-tui
 | `r` | Reset EnvyControl |
 | `q` or `Esc` | Quit |
 
-## 📖 Graphics Modes
+## Graphics Modes
 
 | Mode | Description |
 |------|-------------|
@@ -67,7 +67,7 @@ envy-tui
 | **Hybrid** | Enables PRIME render offloading. GPU can be dynamically turned off when not in use. |
 | **Nvidia** | Uses Nvidia dGPU exclusively. Higher performance, higher power consumption. |
 
-## 🔧 Options
+## Options
 
 ### Hybrid Mode
 - **RTD3 Power Management** - Enable PCI-Express Runtime D3 power management (Turing+)
@@ -76,11 +76,11 @@ envy-tui
 - **Force Composition Pipeline** - Fix screen tearing
 - **Coolbits** - Enable GPU overclocking options
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [EnvyControl](https://github.com/bayasdev/envycontrol) by Victor Bayas
 - [Ratatui](https://github.com/ratatui-org/ratatui) - TUI library for Rust
