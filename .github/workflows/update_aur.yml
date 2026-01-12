@@ -1,0 +1,91 @@
+name: Update AUR
+
+on:
+  workflow_run:
+    workflows: ["GitHub Release"]
+    types:
+      - completed
+  
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag version (ex: v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+
+jobs:
+  aur:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    
+    # CORREÇÃO AQUI: Lógica segura para evitar erro em execução manual
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pacman -Sy --noconfirm git openssh pacman-contrib
+
+      - name: Setup SSH
+        run: |
+          mkdir -p /root/.ssh
+          # O printf "%s\n" garante que haja uma quebra de linha no final
+          printf "%s\n" "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /root/.ssh/id_ed25519
+          chmod 600 /root/.ssh/id_ed25519
+          ssh-keyscan aur.archlinux.org >> /root/.ssh/known_hosts
+    
+      - name: Debug SSH Key Format
+        run: |
+          echo "Primeira linha:"
+          head -n 1 /root/.ssh/id_ed25519
+          echo "Última linha:"
+          tail -n 1 /root/.ssh/id_ed25519
+          echo "Contagem de linhas:"
+          wc -l /root/.ssh/id_ed25519
+
+      - name: Clone AUR repo
+        run: |
+          git clone ssh://aur@aur.archlinux.org/envy-tui-bin.git aur
+
+      - name: Update PKGBUILD and Checksums
+        run: |
+          TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+          
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="${{ inputs.tag_name }}"
+          fi
+          
+          # Remove o 'v'
+          VERSION=${TAG_NAME#v}
+          
+          echo "Processando Tag: $TAG_NAME | Versão: $VERSION"
+
+          cd aur
+
+          sed -i "s/^pkgver=.*/pkgver=$VERSION/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+
+          useradd -m builder
+          chown -R builder:builder .
+
+          su builder -c "updpkgsums"
+          su builder -c "makepkg --printsrcinfo > .SRCINFO"
+
+          git config --global --add safe.directory $PWD
+
+      - name: Commit and push
+        run: |
+          cd aur
+          TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="${{ inputs.tag_name }}"
+          fi
+          
+          git config user.name "Tássio Virginio"
+          git config user.email "tassiovirginio@gmail.com"
+          
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to $TAG_NAME"
+          git push
