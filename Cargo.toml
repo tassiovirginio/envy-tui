@@ -1,0 +1,12 @@
+[package]
+name = "envy-tui"
+version = "0.1.0"
+edition = "2021"
+description = "TUI manager for EnvyControl - GPU switching for Nvidia Optimus laptops"
+authors = ["Tassio"]
+license = "MIT"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+anyhow = "1.0"
