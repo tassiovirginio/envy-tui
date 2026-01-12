@@ -1,6 +1,8 @@
-# 󰾲 Envy TUI
+# Envy TUI
 
 A Terminal User Interface (TUI) manager for [EnvyControl](https://github.com/bayasdev/envycontrol) - Easy GPU switching for Nvidia Optimus laptops under Linux.
+
+
 
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
