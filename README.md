@@ -1,5 +1,7 @@
 # Envy TUI
 
+![](https://github.com/tassiovirginio/envy-tui/blob/main/sample.png?raw=true)
+
 A Terminal User Interface (TUI) manager for [EnvyControl](https://github.com/bayasdev/envycontrol) - Easy GPU switching for Nvidia Optimus laptops under Linux.
 
 
