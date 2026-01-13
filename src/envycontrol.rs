@@ -55,9 +55,13 @@ pub fn switch_mode(options: SwitchOptions) -> Result<String> {
         _ => {}
     }
 
+    args.push("--verbose".to_string());
+
+    let args_str = args.join(" ");
     let output = Command::new("pkexec")
-        .arg("envycontrol")
-        .args(&args)
+        .arg("sh")
+        .arg("-c")
+        .arg(format!("yes | envycontrol {}", args_str))
         .output()?;
 
     if output.status.success() {
@@ -73,8 +77,9 @@ pub fn switch_mode(options: SwitchOptions) -> Result<String> {
 
 pub fn reset() -> Result<String> {
     let output = Command::new("pkexec")
-        .arg("envycontrol")
-        .arg("--reset")
+        .arg("sh")
+        .arg("-c")
+        .arg("yes | envycontrol --reset --verbose")
         .output()?;
 
     if output.status.success() {
