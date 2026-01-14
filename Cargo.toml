@@ -1,9 +1,9 @@
 [package]
 name = "envy-tui"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "TUI manager for EnvyControl - GPU switching for Nvidia Optimus laptops"
-authors = ["Tassio"]
+authors = ["Tássio Virgínio <tassio.virginio@gmail.com>"]
 license = "MIT"
 
 [dependencies]
@@ -12,8 +12,8 @@ crossterm = "0.29"
 anyhow = "1.0"
 
 [package.metadata.deb]
-maintainer = "Tassio Virginio <tassio.virginio@gmail.com>"
-copyright = "2026, Tassio Virginio"
+maintainer = "Tássio Virgínio <tassio.virginio@gmail.com>"
+copyright = "2026, Tássio Virgínio"
 license-file = ["LICENSE", "4"]
 extended-description = """
 TUI manager for EnvyControl - GPU switching for Nvidia Optimus laptops

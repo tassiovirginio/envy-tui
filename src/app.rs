@@ -1,3 +1,4 @@
+use crate::envycontrol::GpuInfo;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,8 +100,25 @@ pub enum AppState {
     Normal,
     ConfirmingSwitch,
     ConfirmingReboot,
+    Loading,
     Success,
     Error,
+}
+
+pub struct Spinner {
+    frames: Vec<&'static str>,
+}
+
+impl Spinner {
+    pub fn new() -> Self {
+        Self {
+            frames: vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+        }
+    }
+
+    pub fn frame(&self, index: usize) -> &str {
+        self.frames[index % self.frames.len()]
+    }
 }
 
 pub struct App {
@@ -117,6 +135,9 @@ pub struct App {
     pub coolbits_value: u8,
     pub should_quit: bool,
     pub pending_mode: Option<GraphicsMode>,
+    pub spinner_frame: usize,
+    pub spinner: Spinner,
+    pub gpu_info: Option<GpuInfo>,
 }
 
 impl App {
@@ -135,6 +156,9 @@ impl App {
             coolbits_value: 28,
             should_quit: false,
             pending_mode: None,
+            spinner_frame: 0,
+            spinner: Spinner::new(),
+            gpu_info: None,
         }
     }
 
@@ -200,6 +224,16 @@ impl App {
     pub fn set_error(&mut self, msg: &str) {
         self.state = AppState::Error;
         self.message = msg.to_string();
+    }
+
+    pub fn set_loading(&mut self, msg: &str) {
+        self.state = AppState::Loading;
+        self.message = msg.to_string();
+        self.spinner_frame = 0;
+    }
+
+    pub fn tick_spinner(&mut self) {
+        self.spinner_frame = self.spinner_frame.wrapping_add(1);
     }
 
     pub fn clear_message(&mut self) {

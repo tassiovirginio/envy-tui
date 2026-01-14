@@ -11,6 +11,9 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use app::{App, AppPanel, AppState};
 use theme::Theme;
@@ -67,7 +70,12 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
         app.set_error("envycontrol is not installed. Please install it first.");
     } else {
         match envycontrol::query_mode() {
-            Ok(mode) => app.current_mode = mode,
+            Ok(mode) => {
+                app.current_mode = mode;
+                if mode != Some(app::GraphicsMode::Integrated) {
+                    app.gpu_info = envycontrol::query_gpu_info();
+                }
+            }
             Err(e) => app.set_error(&format!("Failed to query mode: {}", e)),
         }
     }
@@ -93,16 +101,41 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                             coolbits_value: app.coolbits_value,
                         };
 
-                        match envycontrol::switch_mode(options) {
-                            Ok(_) => {
-                                app.current_mode = Some(selected);
-                                app.pending_mode = None;
-                                app.state = AppState::ConfirmingReboot;
-                                app.message = "Mode changed successfully! Do you want to reboot the computer now?".to_string();
-                            }
-                            Err(e) => {
-                                app.pending_mode = None;
-                                app.set_error(&e.to_string());
+                        app.set_loading("Applying changes...");
+
+                        let (tx, rx) = mpsc::channel();
+                        thread::spawn(move || {
+                            let result = envycontrol::switch_mode(options);
+                            let _ = tx.send((result, selected));
+                        });
+
+                        loop {
+                            terminal.draw(|f| ui::render(f, &app, &theme))?;
+
+                            match rx.try_recv() {
+                                Ok((result, mode)) => {
+                                    match result {
+                                        Ok(_) => {
+                                            app.current_mode = Some(mode);
+                                            app.pending_mode = None;
+                                            app.state = AppState::ConfirmingReboot;
+                                            app.message = "Mode changed successfully! Do you want to reboot now?".to_string();
+                                        }
+                                        Err(e) => {
+                                            app.pending_mode = None;
+                                            app.set_error(&e.to_string());
+                                        }
+                                    }
+                                    break;
+                                }
+                                Err(mpsc::TryRecvError::Empty) => {
+                                    app.tick_spinner();
+                                    thread::sleep(Duration::from_millis(100));
+                                }
+                                Err(mpsc::TryRecvError::Disconnected) => {
+                                    app.set_error("Command failed unexpectedly");
+                                    break;
+                                }
                             }
                         }
                     }
@@ -166,13 +199,40 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> 
                     app.state = AppState::ConfirmingSwitch;
                     app.message = format!("Switch to {} mode? (y/n)", selected);
                 }
-                KeyCode::Char('r') => match envycontrol::reset() {
-                    Ok(msg) => {
-                        app.current_mode = None;
-                        app.set_success(&msg);
+                KeyCode::Char('r') => {
+                    app.set_loading("Resetting...");
+
+                    let (tx, rx) = mpsc::channel();
+                    thread::spawn(move || {
+                        let result = envycontrol::reset();
+                        let _ = tx.send(result);
+                    });
+
+                    loop {
+                        terminal.draw(|f| ui::render(f, &app, &theme))?;
+
+                        match rx.try_recv() {
+                            Ok(result) => {
+                                match result {
+                                    Ok(msg) => {
+                                        app.current_mode = None;
+                                        app.set_success(&msg);
+                                    }
+                                    Err(e) => app.set_error(&e.to_string()),
+                                }
+                                break;
+                            }
+                            Err(mpsc::TryRecvError::Empty) => {
+                                app.tick_spinner();
+                                thread::sleep(Duration::from_millis(100));
+                            }
+                            Err(mpsc::TryRecvError::Disconnected) => {
+                                app.set_error("Command failed unexpectedly");
+                                break;
+                            }
+                        }
                     }
-                    Err(e) => app.set_error(&e.to_string()),
-                },
+                }
                 _ => {}
             }
         }

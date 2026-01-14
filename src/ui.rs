@@ -17,7 +17,7 @@ pub fn render(frame: &mut Frame, app: &App, theme: &Theme) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),
+            Constraint::Length(6),
             Constraint::Min(10),
             Constraint::Length(3),
         ])
@@ -58,7 +58,7 @@ fn render_header(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
         .map(|m| theme.mode_color(m))
         .unwrap_or(theme.muted);
 
-    let content = vec![
+    let mut content = vec![
         Line::from(""),
         title,
         Line::from(Span::styled(
@@ -66,6 +66,19 @@ fn render_header(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
             Style::default().fg(mode_color),
         )),
     ];
+
+    if let Some(gpu) = &app.gpu_info {
+        content.push(Line::from(vec![
+            Span::styled("󰍹 ", Style::default().fg(theme.nvidia_color)),
+            Span::styled(&gpu.name, Style::default().fg(theme.muted)),
+            Span::styled(" │ ", Style::default().fg(theme.border)),
+            Span::styled("🌡 ", Style::default().fg(theme.warning)),
+            Span::styled(&gpu.temperature, Style::default().fg(theme.muted)),
+            Span::styled(" │ ", Style::default().fg(theme.border)),
+            Span::styled("󰍛 ", Style::default().fg(theme.accent)),
+            Span::styled(gpu.memory_display(), Style::default().fg(theme.muted)),
+        ]));
+    }
 
     let block = Block::default()
         .borders(Borders::BOTTOM)
@@ -325,6 +338,10 @@ fn render_message(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
     let (title, border_color, icon) = match app.state {
         AppState::Success => (" Success ", theme.success, " "),
         AppState::Error => (" Error ", theme.error, " "),
+        AppState::Loading => {
+            let spinner_icon = app.spinner.frame(app.spinner_frame);
+            return render_loading_popup(frame, app, theme, area, spinner_icon);
+        }
         AppState::ConfirmingSwitch | AppState::ConfirmingReboot => {
             (" Confirm ", theme.warning, "󰋼 ")
         }
@@ -361,6 +378,54 @@ fn render_message(frame: &mut Frame, app: &App, theme: &Theme, area: Rect) {
             },
             Style::default().fg(theme.muted),
         )),
+    ];
+
+    let paragraph = Paragraph::new(content).alignment(Alignment::Center);
+
+    frame.render_widget(paragraph, inner);
+}
+
+fn render_loading_popup(
+    frame: &mut Frame,
+    app: &App,
+    theme: &Theme,
+    area: Rect,
+    spinner_icon: &str,
+) {
+    let width = 40.min(area.width.saturating_sub(4));
+    let height = 5;
+    let x = (area.width.saturating_sub(width)) / 2;
+    let y = (area.height.saturating_sub(height)) / 2;
+
+    let popup_area = Rect::new(x, y, width, height);
+
+    frame.render_widget(Clear, popup_area);
+
+    let block = Block::default()
+        .title(" Loading ")
+        .title_style(
+            Style::default()
+                .fg(theme.accent)
+                .add_modifier(Modifier::BOLD),
+        )
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.accent))
+        .style(Style::default().bg(theme.bg));
+
+    let inner = block.inner(popup_area);
+    frame.render_widget(block, popup_area);
+
+    let content = vec![
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                format!("{} ", spinner_icon),
+                Style::default()
+                    .fg(theme.accent)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(&app.message, Style::default().fg(theme.fg)),
+        ]),
     ];
 
     let paragraph = Paragraph::new(content).alignment(Alignment::Center);

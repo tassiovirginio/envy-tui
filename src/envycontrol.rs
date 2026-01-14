@@ -102,3 +102,45 @@ pub fn reboot() -> Result<()> {
     Command::new("systemctl").arg("reboot").spawn()?;
     Ok(())
 }
+
+#[derive(Debug, Clone)]
+pub struct GpuInfo {
+    pub name: String,
+    pub temperature: String,
+    pub memory_used: String,
+    pub memory_total: String,
+}
+
+impl GpuInfo {
+    pub fn memory_display(&self) -> String {
+        format!("{} / {} MiB", self.memory_used, self.memory_total)
+    }
+}
+
+pub fn query_gpu_info() -> Option<GpuInfo> {
+    let output = Command::new("nvidia-smi")
+        .args([
+            "--query-gpu=name,temperature.gpu,memory.used,memory.total",
+            "--format=csv,noheader,nounits",
+        ])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parts: Vec<&str> = stdout.trim().split(',').map(|s| s.trim()).collect();
+
+    if parts.len() >= 4 {
+        Some(GpuInfo {
+            name: parts[0].to_string(),
+            temperature: format!("{}°C", parts[1]),
+            memory_used: parts[2].to_string(),
+            memory_total: parts[3].to_string(),
+        })
+    } else {
+        None
+    }
+}
