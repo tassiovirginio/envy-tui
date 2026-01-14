@@ -1,6 +1,6 @@
 [package]
 name = "envy-tui"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "TUI manager for EnvyControl - GPU switching for Nvidia Optimus laptops"
 authors = ["Tassio"]
@@ -24,6 +24,8 @@ priority = "optional"
 assets = [
     ["target/release/envy-tui", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/envy-tui/README.md", "644"],
+    ["envy-tui-logo.png", "usr/share/icons/hicolor/256x256/apps/envy-tui.png", "644"],
+    ["envy-tui.desktop", "usr/share/applications/envy-tui.desktop", "644"],
 ]
 
 [profile.release]

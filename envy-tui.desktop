@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Envy TUI
+Comment=TUI manager for EnvyControl - GPU switching for Nvidia Optimus laptops
+Exec=envy-tui
+Icon=envy-tui
+Terminal=true
+Type=Application
+Categories=Utility;System;
+Keywords=nvidia;gpu;optimus;envycontrol;

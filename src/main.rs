@@ -15,7 +15,31 @@ use std::io;
 use app::{App, AppPanel, AppState};
 use theme::Theme;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "--version" | "-V" => {
+                println!("envy-tui {}", VERSION);
+                return Ok(());
+            }
+            "--help" | "-h" => {
+                println!("envy-tui {} - TUI manager for EnvyControl", VERSION);
+                println!();
+                println!("Usage: envy-tui [OPTIONS]");
+                println!();
+                println!("Options:");
+                println!("  -V, --version    Print version information");
+                println!("  -h, --help       Print this help message");
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
